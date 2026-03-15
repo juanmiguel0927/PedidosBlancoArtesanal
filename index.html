@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blanco Artesanal - Pedidos por WhatsApp</title>
+    <!-- Tailwind CSS para el diseño -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Iconos de Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Ocultar flechas de los inputs numéricos */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        /* Color de marca personalizado basado en el logo */
+        .brand-green { color: #2C6636; }
+        .bg-brand-green { background-color: #2C6636; }
+        .hover-bg-brand-green:hover { background-color: #1f4a26; }
+        .ring-brand-green:focus { --tw-ring-color: #2C6636; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased pb-32">
+
+    <!-- Encabezado con Logo -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-3xl mx-auto px-4 py-6 flex flex-col items-center justify-center text-center">
+            <img src="unnamed.jpg" alt="Logo Blanco Artesanal" class="w-32 h-32 object-contain rounded-full shadow-sm mb-2 border-2 border-green-50">
+            <h1 class="text-2xl font-bold brand-green tracking-tight">Blanco Artesanal</h1>
+            <p class="text-gray-500 text-sm mt-1 italic font-medium">"El arte de la cremosidad"</p>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 mt-6">
+        
+        <!-- Banner de Tamaños de Vasos -->
+        <section class="mb-6 rounded-xl overflow-hidden shadow-sm border border-gray-100 bg-white">
+            <div class="p-3 bg-gray-50 border-b border-gray-100 text-sm font-medium text-gray-600 text-center">
+                Guía de tamaños disponibles
+            </div>
+            <img src="vasos.jpeg" alt="Tamaños de vasos Blanco Artesanal" class="w-full object-cover">
+        </section>
+
+        <!-- Formulario de Productos (Categorizado) -->
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-6">
+            <div class="flex justify-between items-end border-b pb-3 mb-4">
+                <h2 class="text-lg font-semibold flex items-center gap-2 brand-green">
+                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                    Arma tu Pedido
+                </h2>
+                <button onclick="resetOrder()" class="text-sm text-red-500 hover:text-red-700 flex items-center gap-1 font-medium transition-colors bg-red-50 px-2 py-1 rounded" title="Borrar todo">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    Vaciar
+                </button>
+            </div>
+
+            <div id="product-list" class="space-y-6">
+                <!-- Los productos se inyectarán aquí con JavaScript categorizados -->
+            </div>
+        </section>
+
+        <!-- Notas -->
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                <i data-lucide="message-square" class="w-5 h-5 text-gray-500"></i>
+                Notas adicionales (Opcional)
+            </label>
+            <textarea id="notes" onchange="saveState()" rows="2" class="w-full border-gray-300 rounded-lg p-3 border focus:ring-2 ring-brand-green outline-none transition-all" placeholder="Ej. Entregar después de las 3 PM, o sin cubiertos..."></textarea>
+        </section>
+
+    </main>
+
+    <!-- Resumen Total (Barra Fija abajo) -->
+    <section class="fixed bottom-0 left-0 right-0 bg-gray-900 text-white p-4 shadow-2xl z-50 border-t border-gray-800">
+        <div class="max-w-3xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex justify-between w-full sm:w-auto gap-6 px-2">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase tracking-wider">Unidades</p>
+                    <p class="text-xl font-bold" id="totalUnits">0</p>
+                </div>
+                <div class="text-right sm:text-left">
+                    <p class="text-gray-400 text-xs uppercase tracking-wider">Total a Pagar</p>
+                    <p class="text-2xl font-bold text-green-400" id="totalPrice">$0</p>
+                </div>
+            </div>
+            
+            <button onclick="sendOrder()" class="w-full sm:w-auto bg-brand-green hover-bg-brand-green text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-lg">
+                <i data-lucide="send" class="w-5 h-5"></i>
+                Enviar por WhatsApp
+            </button>
+        </div>
+        <p id="errorMessage" class="text-red-400 text-sm text-center mt-2 hidden max-w-3xl mx-auto"></p>
+    </section>
+
+    <script>
+        // Inicializar iconos
+        lucide.createIcons();
+
+        // ==========================================
+        // CONFIGURACIÓN PRINCIPAL
+        // ==========================================
+        const WHATSAPP_NUMBER = "573004916648"; 
+        const MINIMUM_UNITS = 1; 
+
+        // Lista de productos categorizados
+        const products = [
+            // --- Categoría: Yogur Líquido ---
+            { id: "y1l-b", name: "Blanco (Natural)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
+            { id: "y1l-fc", name: "Fresas (Con azúcar)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
+            { id: "y1l-fs", name: "Fresas (Sin azúcar)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
+            { id: "y1l-mc", name: "Melocotón (Con azúcar)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
+            { id: "y1l-ms", name: "Melocotón (Sin azúcar)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
+
+            // --- Categoría: Yogur Griego ---
+            { id: "yg150-fc", name: "150g - Fresas (Con azúcar)", price: 8000, quantity: 0, category: "Yogur Griego" },
+            { id: "yg150-fs", name: "150g - Fresas (Sin azúcar)", price: 8000, quantity: 0, category: "Yogur Griego" },
+            { id: "yg300-fc", name: "300g - Fresas (Con azúcar)", price: 15000, quantity: 0, category: "Yogur Griego" },
+            { id: "yg300-fs", name: "300g - Fresas (Sin azúcar)", price: 15000, quantity: 0, category: "Yogur Griego" },
+            { id: "yg500-fc", name: "500g - Fresas (Con azúcar)", price: 25000, quantity: 0, category: "Yogur Griego" },
+            { id: "yg500-fs", name: "500g - Fresas (Sin azúcar)", price: 25000, quantity: 0, category: "Yogur Griego" },
+            { id: "yg1000-fc", name: "1000g - Fresas (Con azúcar)", price: 45000, quantity: 0, category: "Yogur Griego" },
+            { id: "yg1000-fs", name: "1000g - Fresas (Sin azúcar)", price: 45000, quantity: 0, category: "Yogur Griego" }
+        ];
+
+        // ==========================================
+        // LÓGICA DE LA APLICACIÓN
+        // ==========================================
+
+        const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('es-CO', {
+                style: 'currency',
+                currency: 'COP',
+                minimumFractionDigits: 0
+            }).format(amount);
+        };
+
+        // Renderizar los productos agrupados por categorías
+        const renderProducts = () => {
+            const container = document.getElementById('product-list');
+            container.innerHTML = '';
+
+            // Obtener categorías únicas
+            const categories = [...new Set(products.map(p => p.category))];
+
+            categories.forEach(category => {
+                // Crear título de categoría
+                let categoryHTML = `
+                    <div class="mb-4">
+                        <h3 class="font-bold text-gray-700 bg-gray-100 py-2 px-3 rounded-lg mb-2 text-sm uppercase tracking-wide">${category}</h3>
+                        <div class="space-y-2">
+                `;
+
+                // Filtrar productos de esta categoría
+                products.forEach((product, index) => {
+                    if (product.category === category) {
+                        categoryHTML += `
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-green-50 rounded-lg border border-gray-100 transition-colors">
+                                <div class="mb-2 sm:mb-0 pr-4">
+                                    <h4 class="font-medium text-gray-800 text-sm">${product.name}</h4>
+                                    <p class="text-green-700 font-semibold text-sm">${formatCurrency(product.price)}</p>
+                                </div>
+                                
+                                <div class="flex items-center gap-1 bg-white p-1 rounded-lg border border-gray-200 shadow-sm w-fit self-start sm:self-auto">
+                                    <button onclick="updateQuantity(${index}, -1)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-red-500 rounded-md transition-colors active:scale-95">
+                                        <i data-lucide="minus" class="w-4 h-4"></i>
+                                    </button>
+                                    
+                                    <input type="number" 
+                                        id="qty-${index}"
+                                        class="w-10 text-center font-bold text-gray-900 outline-none bg-transparent" 
+                                        value="${product.quantity}" 
+                                        min="0"
+                                        onchange="setQuantity(${index}, this.value)">
+                                        
+                                    <button onclick="updateQuantity(${index}, 1)" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-green-600 rounded-md transition-colors active:scale-95">
+                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                categoryHTML += `</div></div>`;
+                container.innerHTML += categoryHTML;
+            });
+            
+            lucide.createIcons();
+            calculateTotals();
+        };
+
+        const updateQuantity = (index, change) => {
+            let newQty = products[index].quantity + change;
+            if (newQty < 0) newQty = 0;
+            products[index].quantity = newQty;
+            saveState();
+            renderProducts();
+        };
+
+        const setQuantity = (index, value) => {
+            let newQty = parseInt(value) || 0;
+            if (newQty < 0) newQty = 0;
+            products[index].quantity = newQty;
+            saveState();
+            calculateTotals(); 
+        };
+
+        const calculateTotals = () => {
+            let totalUnits = 0;
+            let subTotalPrice = 0;
+
+            products.forEach(p => {
+                totalUnits += p.quantity;
+                subTotalPrice += (p.quantity * p.price);
+            });
+
+            document.getElementById('totalUnits').innerText = totalUnits;
+            document.getElementById('totalPrice').innerText = formatCurrency(subTotalPrice);
+            
+            return { totalUnits, subTotalPrice };
+        };
+
+        const sendOrder = () => {
+            const notes = document.getElementById('notes').value.trim();
+            const errorMsg = document.getElementById('errorMessage');
+            const totals = calculateTotals();
+
+            // Validaciones
+            if (totals.totalUnits < MINIMUM_UNITS) {
+                showError(`Debes seleccionar al menos ${MINIMUM_UNITS} producto.`);
+                return;
+            }
+
+            errorMsg.classList.add('hidden');
+
+            // Armar Mensaje
+            let message = `*🚨 NUEVO PEDIDO - BLANCO ARTESANAL* 🚨\n\n`;
+            
+            if (notes) message += `*📝 Notas:* ${notes}\n`;
+            
+            message += `\n*🛒 DETALLE DEL PEDIDO:*\n`;
+
+            products.forEach(p => {
+                if (p.quantity > 0) {
+                    message += `▪️ ${p.quantity}x ${p.category} - ${p.name} (${formatCurrency(p.quantity * p.price)})\n`;
+                }
+            });
+
+            message += `\n*📦 Total Unidades:* ${totals.totalUnits}\n`;
+            message += `*💲 TOTAL A PAGAR: ${formatCurrency(totals.subTotalPrice)}*\n\n`;
+            message += `_¡Hola! Este es mi pedido. Quedo atento(a) para coordinar el pago. ¡Gracias!_`;
+
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
+            
+            window.open(whatsappUrl, '_blank');
+        };
+
+        const showError = (text) => {
+            const errorMsg = document.getElementById('errorMessage');
+            errorMsg.innerText = text;
+            errorMsg.classList.remove('hidden');
+            const btn = document.querySelector('button[onclick="sendOrder()"]');
+            btn.classList.add('animate-bounce');
+            setTimeout(() => btn.classList.remove('animate-bounce'), 1000);
+        }
+
+        // ==========================================
+        // SISTEMA DE GUARDADO (LOCALSTORAGE)
+        // ==========================================
+        
+        const saveState = () => {
+            const state = {
+                products: products.map(p => p.quantity),
+                notes: document.getElementById('notes').value
+            };
+            localStorage.setItem('blancoArtesanal_Cart', JSON.stringify(state));
+        };
+
+        const loadState = () => {
+            const saved = localStorage.getItem('blancoArtesanal_Cart');
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    // Restaurar cantidades
+                    if(state.products) {
+                        state.products.forEach((qty, i) => { 
+                            if(products[i]) products[i].quantity = qty; 
+                        });
+                    }
+                    // Restaurar notas
+                    if(state.notes) document.getElementById('notes').value = state.notes;
+                } catch (e) {
+                    console.error("Error cargando carrito guardado", e);
+                }
+            }
+        };
+
+        const resetOrder = () => {
+            if(confirm("¿Estás seguro de que deseas vaciar tu carrito?")) {
+                products.forEach(p => p.quantity = 0);
+                document.getElementById('notes').value = '';
+                document.getElementById('errorMessage').classList.add('hidden');
+                
+                // Borrar memoria
+                localStorage.removeItem('blancoArtesanal_Cart');
+                
+                renderProducts();
+            }
+        };
+
+        // Inicialización
+        loadState();
+        renderProducts();
+    </script>
+</body>
+</html>
