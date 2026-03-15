@@ -88,11 +88,13 @@
             <div class="flex justify-between w-full sm:w-auto gap-6 px-2">
                 <div>
                     <p class="text-gray-400 text-xs uppercase tracking-wider">Unidades</p>
-                    <p class="text-xl font-bold" id="totalUnits">0</p>
+                    <!-- Agregamos transition-all y transform para la animación -->
+                    <p class="text-xl font-bold transition-all duration-200 inline-block transform" id="totalUnits">0</p>
                 </div>
                 <div class="text-right sm:text-left">
                     <p class="text-gray-400 text-xs uppercase tracking-wider">Total a Pagar</p>
-                    <p class="text-2xl font-bold text-green-400" id="totalPrice">$0</p>
+                    <!-- Agregamos transition-all y transform para la animación -->
+                    <p class="text-2xl font-bold text-green-400 transition-all duration-200 inline-block transform" id="totalPrice">$0</p>
                 </div>
             </div>
             
@@ -114,24 +116,24 @@
         const WHATSAPP_NUMBER = "573004916648"; 
         const MINIMUM_UNITS = 1; 
 
-        // Lista de productos categorizados
+        // Lista de productos categorizados con Emojis visuales
         const products = [
             // --- Categoría: Yogur Líquido ---
-            { id: "y1l-b", name: "Blanco (Natural)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
-            { id: "y1l-fc", name: "Fresas (Con azúcar)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
-            { id: "y1l-fs", name: "Fresas (Sin azúcar)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
-            { id: "y1l-mc", name: "Melocotón (Con azúcar)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
-            { id: "y1l-ms", name: "Melocotón (Sin azúcar)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
+            { id: "y1l-b", name: "🥛 Blanco (Natural)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
+            { id: "y1l-fc", name: "🍓 Fresas (Con azúcar)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
+            { id: "y1l-fs", name: "🍓 Fresas (Sin azúcar)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
+            { id: "y1l-mc", name: "🍑 Melocotón (Con azúcar)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
+            { id: "y1l-ms", name: "🍑 Melocotón (Sin azúcar)", price: 11000, quantity: 0, category: "Yogur Líquido (1 Litro)" },
 
             // --- Categoría: Yogur Griego ---
-            { id: "yg150-fc", name: "150g - Fresas (Con azúcar)", price: 8000, quantity: 0, category: "Yogur Griego" },
-            { id: "yg150-fs", name: "150g - Fresas (Sin azúcar)", price: 8000, quantity: 0, category: "Yogur Griego" },
-            { id: "yg300-fc", name: "300g - Fresas (Con azúcar)", price: 15000, quantity: 0, category: "Yogur Griego" },
-            { id: "yg300-fs", name: "300g - Fresas (Sin azúcar)", price: 15000, quantity: 0, category: "Yogur Griego" },
-            { id: "yg500-fc", name: "500g - Fresas (Con azúcar)", price: 25000, quantity: 0, category: "Yogur Griego" },
-            { id: "yg500-fs", name: "500g - Fresas (Sin azúcar)", price: 25000, quantity: 0, category: "Yogur Griego" },
-            { id: "yg1000-fc", name: "1000g - Fresas (Con azúcar)", price: 45000, quantity: 0, category: "Yogur Griego" },
-            { id: "yg1000-fs", name: "1000g - Fresas (Sin azúcar)", price: 45000, quantity: 0, category: "Yogur Griego" }
+            { id: "yg150-fc", name: "🍓 150g - Fresas (Con azúcar)", price: 8000, quantity: 0, category: "Yogur Griego" },
+            { id: "yg150-fs", name: "🍓 150g - Fresas (Sin azúcar)", price: 8000, quantity: 0, category: "Yogur Griego" },
+            { id: "yg300-fc", name: "🍓 300g - Fresas (Con azúcar)", price: 15000, quantity: 0, category: "Yogur Griego" },
+            { id: "yg300-fs", name: "🍓 300g - Fresas (Sin azúcar)", price: 15000, quantity: 0, category: "Yogur Griego" },
+            { id: "yg500-fc", name: "🍓 500g - Fresas (Con azúcar)", price: 25000, quantity: 0, category: "Yogur Griego" },
+            { id: "yg500-fs", name: "🍓 500g - Fresas (Sin azúcar)", price: 25000, quantity: 0, category: "Yogur Griego" },
+            { id: "yg1000-fc", name: "🍓 1000g - Fresas (Con azúcar)", price: 45000, quantity: 0, category: "Yogur Griego" },
+            { id: "yg1000-fs", name: "🍓 1000g - Fresas (Sin azúcar)", price: 45000, quantity: 0, category: "Yogur Griego" }
         ];
 
         // ==========================================
@@ -201,9 +203,31 @@
             calculateTotals();
         };
 
+        // Función para animar el carrito al agregar productos
+        const triggerCartFlash = () => {
+            const unitsEl = document.getElementById('totalUnits');
+            const priceEl = document.getElementById('totalPrice');
+            
+            // Agrandar y cambiar color a verde más claro
+            unitsEl.classList.add('scale-125', 'text-green-300');
+            priceEl.classList.add('scale-110', 'text-green-300');
+            
+            // Regresar a la normalidad después de 200 milisegundos
+            setTimeout(() => {
+                unitsEl.classList.remove('scale-125', 'text-green-300');
+                priceEl.classList.remove('scale-110', 'text-green-300');
+            }, 200);
+        };
+
         const updateQuantity = (index, change) => {
             let newQty = products[index].quantity + change;
             if (newQty < 0) newQty = 0;
+            
+            // Si el cliente está AGREGANDO un producto, activa la animación visual
+            if (change > 0 && newQty > products[index].quantity) {
+                triggerCartFlash();
+            }
+
             products[index].quantity = newQty;
             saveState();
             renderProducts();
