@@ -88,12 +88,10 @@
             <div class="flex justify-between w-full sm:w-auto gap-6 px-2">
                 <div>
                     <p class="text-gray-400 text-xs uppercase tracking-wider">Unidades</p>
-                    <!-- Agregamos transition-all y transform para la animación -->
                     <p class="text-xl font-bold transition-all duration-200 inline-block transform" id="totalUnits">0</p>
                 </div>
                 <div class="text-right sm:text-left">
                     <p class="text-gray-400 text-xs uppercase tracking-wider">Total a Pagar</p>
-                    <!-- Agregamos transition-all y transform para la animación -->
                     <p class="text-2xl font-bold text-green-400 transition-all duration-200 inline-block transform" id="totalPrice">$0</p>
                 </div>
             </div>
@@ -156,23 +154,19 @@
             }).format(amount);
         };
 
-        // Renderizar los productos agrupados por categorías
         const renderProducts = () => {
             const container = document.getElementById('product-list');
             container.innerHTML = '';
 
-            // Obtener categorías únicas
             const categories = [...new Set(products.map(p => p.category))];
 
             categories.forEach(category => {
-                // Crear título de categoría
                 let categoryHTML = `
                     <div class="mb-4">
                         <h3 class="font-bold text-gray-700 bg-gray-100 py-2 px-3 rounded-lg mb-2 text-sm uppercase tracking-wide">${category}</h3>
                         <div class="space-y-2">
                 `;
 
-                // Filtrar productos de esta categoría
                 products.forEach((product, index) => {
                     if (product.category === category) {
                         categoryHTML += `
@@ -211,16 +205,13 @@
             calculateTotals();
         };
 
-        // Función para animar el carrito al agregar productos
         const triggerCartFlash = () => {
             const unitsEl = document.getElementById('totalUnits');
             const priceEl = document.getElementById('totalPrice');
             
-            // Agrandar y cambiar color a verde más claro
             unitsEl.classList.add('scale-125', 'text-green-300');
             priceEl.classList.add('scale-110', 'text-green-300');
             
-            // Regresar a la normalidad después de 200 milisegundos
             setTimeout(() => {
                 unitsEl.classList.remove('scale-125', 'text-green-300');
                 priceEl.classList.remove('scale-110', 'text-green-300');
@@ -231,7 +222,6 @@
             let newQty = products[index].quantity + change;
             if (newQty < 0) newQty = 0;
             
-            // Si el cliente está AGREGANDO un producto, activa la animación visual
             if (change > 0 && newQty > products[index].quantity) {
                 triggerCartFlash();
             }
@@ -269,7 +259,6 @@
             const errorMsg = document.getElementById('errorMessage');
             const totals = calculateTotals();
 
-            // Validaciones
             if (totals.totalUnits < MINIMUM_UNITS) {
                 showError(`Debes seleccionar al menos ${MINIMUM_UNITS} producto.`);
                 return;
@@ -277,22 +266,62 @@
 
             errorMsg.classList.add('hidden');
 
-            // Armar Mensaje
+            // Armar Mensaje Principal
             let message = `*🚨 NUEVO PEDIDO - BLANCO ARTESANAL* 🚨\n\n`;
             
-            if (notes) message += `*📝 Notas:* ${notes}\n`;
+            if (notes) message += `*📝 Notas:* ${notes}\n\n`;
             
-            message += `\n*🛒 DETALLE DEL PEDIDO:*\n`;
+            message += `*🛒 DETALLE DEL PEDIDO:*\n\n`;
 
-            products.forEach(p => {
-                if (p.quantity > 0) {
-                    message += `▪️ ${p.quantity}x ${p.category} - ${p.name} (${formatCurrency(p.quantity * p.price)})\n`;
+            const selectedProducts = products.filter(p => p.quantity > 0);
+            const categories = [...new Set(selectedProducts.map(p => p.category))];
+
+            categories.forEach(category => {
+                message += `*📦 ${category.toUpperCase()}*\n`;
+
+                const catProducts = selectedProducts.filter(p => p.category === category);
+                
+                const sinAzucar = catProducts.filter(p => p.name.includes('Sin azúcar'));
+                const conAzucar = catProducts.filter(p => p.name.includes('Con azúcar'));
+                
+                if (sinAzucar.length > 0) {
+                    message += `🌿 _Sin Azúcar:_\n`;
+                    sinAzucar.forEach(p => {
+                        let itemName = p.name.replace('(Sin azúcar)', '*(Sin azúcar)* 🌿');
+                        message += `▪️ *${p.quantity}x* ${itemName} - *${formatCurrency(p.quantity * p.price)}*\n`;
+                    });
+                    message += `\n`; 
+                }
+
+                if (conAzucar.length > 0) {
+                    message += `🍯 _Con Azúcar:_\n`;
+                    conAzucar.forEach(p => {
+                        message += `▪️ *${p.quantity}x* ${p.name} - *${formatCurrency(p.quantity * p.price)}*\n`;
+                    });
+                    message += `\n`; 
                 }
             });
 
-            message += `\n*📦 Total Unidades:* ${totals.totalUnits}\n`;
+            message += `*📦 Total Unidades:* ${totals.totalUnits}\n`;
             message += `*💲 TOTAL A PAGAR: ${formatCurrency(totals.subTotalPrice)}*\n\n`;
-            message += `_¡Hola! Este es mi pedido. Quedo atento(a) para coordinar el pago. ¡Gracias!_`;
+            
+            // --- NUEVO: RESUMEN RÁPIDO Y REDUCIDO ---
+            message += `*📋 RESUMEN RÁPIDO:*\n`;
+            selectedProducts.forEach(p => {
+                // Quitamos emojis para hacer la lectura más limpia
+                let shortName = p.name.replace(/[🥛🍓🍑]/g, '').trim(); 
+                // Abreviamos para que sea súper reducido
+                shortName = shortName.replace('(Sin azúcar)', 'SA').replace('(Con azúcar)', 'CA');
+                
+                // Si es líquido, le ponemos (1L) para diferenciarlo rápidamente de los griegos
+                if (p.category.includes('Líquido')) {
+                    shortName += ' (1L)';
+                }
+                
+                message += `• ${p.quantity}x ${shortName}\n`;
+            });
+            
+            message += `\n_¡Hola! Este es mi pedido. Quedo atento(a) para coordinar el pago. ¡Gracias!_`;
 
             const encodedMessage = encodeURIComponent(message);
             const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
@@ -309,10 +338,6 @@
             setTimeout(() => btn.classList.remove('animate-bounce'), 1000);
         }
 
-        // ==========================================
-        // SISTEMA DE GUARDADO (LOCALSTORAGE)
-        // ==========================================
-        
         const saveState = () => {
             const state = {
                 products: products.map(p => p.quantity),
@@ -326,13 +351,11 @@
             if (saved) {
                 try {
                     const state = JSON.parse(saved);
-                    // Restaurar cantidades
                     if(state.products) {
                         state.products.forEach((qty, i) => { 
                             if(products[i]) products[i].quantity = qty; 
                         });
                     }
-                    // Restaurar notas
                     if(state.notes) document.getElementById('notes').value = state.notes;
                 } catch (e) {
                     console.error("Error cargando carrito guardado", e);
@@ -346,7 +369,6 @@
                 document.getElementById('notes').value = '';
                 document.getElementById('errorMessage').classList.add('hidden');
                 
-                // Borrar memoria
                 localStorage.removeItem('blancoArtesanal_Cart');
                 
                 renderProducts();
@@ -359,3 +381,5 @@
     </script>
 </body>
 </html>
+
+
